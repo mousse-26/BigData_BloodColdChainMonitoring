@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0B1A22" />
+<title>Cold Chain — Blood Bag Safety Check</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0B1A22;
+    --ink-2:#122A35;
+    --steel:#5E7987;
+    --steel-2:#93AAB6;
+    --ice:#E9F1F4;
+    --ice-2:#F6FAFB;
+    --line:rgba(94,121,135,.24);
+    --cold:#1F9DC4;
+    --cold-deep:#0E6B8C;
+    --blood:#B3122E;
+    --amber:#C77D00;
+    --safe:#0E8A6A;
+    --radius:3px;
+    --gut:clamp(16px,4vw,28px);
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--ice);
+    color:var(--ink);
+    font-family:"IBM Plex Sans",system-ui,sans-serif;
+    font-size:15px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .mono{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+  .cond{font-family:"IBM Plex Sans Condensed","IBM Plex Sans",sans-serif}
+
+  .eyebrow{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--steel);
+  }
+
+  /* ---------- shell ---------- */
+  .wrap{max-width:1140px;margin:0 auto;padding:0 var(--gut) 96px}
+
+  header.top{
+    position:sticky;top:0;z-index:40;
+    background:var(--ink);
+    color:var(--ice-2);
+    border-bottom:2px solid var(--cold-deep);
+  }
+  .top-inner{
+    max-width:1140px;margin:0 auto;padding:12px var(--gut);
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  }
+  .brand{display:flex;align-items:baseline;gap:10px;margin-right:auto;min-width:0}
+  .brand h1{
+    font-family:"IBM Plex Sans Condensed",sans-serif;
+    font-size:19px;font-weight:700;letter-spacing:.02em;margin:0;white-space:nowrap;
+  }
+  .brand .sub{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.14em;color:var(--steel-2);text-transform:uppercase}
+
+  .status{
+    display:inline-flex;align-items:center;gap:7px;
+    font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.06em;
+    padding:5px 10px;border:1px solid rgba(147,170,182,.35);border-radius:100px;
+    color:var(--steel-2);background:rgba(255,255,255,.03);
+    cursor:pointer;
+  }
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--steel);flex:none}
+  .status[data-s="ok"]{color:#8FE3C9;border-color:rgba(14,138,106,.5)}
+  .status[data-s="ok"] .dot{background:#2ECC9B;box-shadow:0 0 0 3px rgba(46,204,155,.18)}
+  .status[data-s="down"]{color:#FFB3BF;border-color:rgba(179,18,46,.5)}
+  .status[data-s="down"] .dot{background:#FF5A76}
+  .status[data-s="busy"] .dot{animation:pulse 1s infinite}
+  @keyframes pulse{50%{opacity:.25}}
+
+  /* ---------- endpoint bar ---------- */
+  .endpoint{
+    background:var(--ink-2);border-top:1px solid rgba(147,170,182,.15);
+    display:none;
+  }
+  .endpoint.open{display:block}
+  .endpoint-inner{
+    max-width:1140px;margin:0 auto;padding:12px var(--gut) 14px;
+    display:flex;gap:10px;align-items:center;flex-wrap:wrap;
+  }
+  .endpoint label{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--steel-2)}
+  .endpoint input{
+    flex:1;min-width:220px;
+    background:#0A1720;border:1px solid rgba(147,170,182,.28);color:var(--ice-2);
+    font-family:"IBM Plex Mono",monospace;font-size:13px;
+    padding:9px 11px;border-radius:var(--radius);
+  }
+  .endpoint input:focus{outline:2px solid var(--cold);outline-offset:1px}
+  .endpoint .hint{width:100%;font-size:12px;color:var(--steel-2);margin:0}
+
+  /* ---------- hero gauge (signature) ---------- */
+  .gauge-card{
+    background:var(--ink);color:var(--ice-2);
+    margin:0 calc(var(--gut) * -1);
+    padding:26px var(--gut) 30px;
+  }
+  .gauge-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:20px;flex-wrap:wrap}
+  .gauge-head h2{
+    font-family:"IBM Plex Sans Condensed",sans-serif;
+    font-size:clamp(22px,5vw,30px);font-weight:700;margin:0;letter-spacing:.01em;
+  }
+  .gauge-head p{margin:4px 0 0;color:var(--steel-2);font-size:13px;max-width:44ch}
+
+  .scale{position:relative;height:96px;margin-top:8px}
+  .track{
+    position:absolute;left:0;right:0;top:34px;height:26px;
+    background:linear-gradient(90deg,#12414F 0%,#12414F 100%);
+    border:1px solid rgba(147,170,182,.22);
+  }
+  .band{
+    position:absolute;top:34px;height:26px;
+    background:repeating-linear-gradient(135deg,rgba(31,157,196,.35) 0 6px,rgba(31,157,196,.18) 6px 12px);
+    border-left:1px solid var(--cold);border-right:1px solid var(--cold);
+  }
+  .band-label{
+    position:absolute;top:6px;font-family:"IBM Plex Mono",monospace;font-size:10px;
+    letter-spacing:.12em;color:var(--cold);text-transform:uppercase;white-space:nowrap;
+  }
+  .excursion{
+    position:absolute;top:34px;height:26px;
+    background:rgba(179,18,46,.42);border-left:1px solid var(--blood);
+  }
+  .span-bar{
+    position:absolute;top:41px;height:12px;border-radius:2px;
+    background:var(--ice-2);
+    transition:left .35s cubic-bezier(.2,.7,.3,1),width .35s cubic-bezier(.2,.7,.3,1);
+  }
+  .marker{
+    position:absolute;top:26px;width:2px;height:42px;background:var(--ice-2);
+    transition:left .35s cubic-bezier(.2,.7,.3,1);
+  }
+  .marker.mean{background:#FFD166;height:52px;top:21px}
+  .marker span{
+    position:absolute;top:-19px;left:50%;transform:translateX(-50%);
+    font-family:"IBM Plex Mono",monospace;font-size:11px;white-space:nowrap;color:var(--ice-2);
+  }
+  .marker.mean span{color:#FFD166;font-weight:600}
+  .ticks{position:absolute;left:0;right:0;top:64px;height:22px}
+  .tick{position:absolute;top:0;transform:translateX(-50%);text-align:center}
+  .tick i{display:block;width:1px;height:6px;background:rgba(147,170,182,.5);margin:0 auto}
+  .tick b{font-family:"IBM Plex Mono",monospace;font-size:10px;font-weight:400;color:var(--steel-2)}
+
+  /* ---------- layout ---------- */
+  .cols{display:grid;grid-template-columns:1fr;gap:28px;margin-top:30px}
+  @media(min-width:900px){
+    .cols{grid-template-columns:1fr 350px;gap:34px;align-items:start}
+    .verdict-col{position:sticky;top:76px}
+  }
+
+  fieldset{border:0;margin:0 0 26px;padding:0}
+  legend{padding:0;width:100%}
+  .sec-head{
+    display:flex;align-items:center;gap:12px;
+    padding-bottom:8px;border-bottom:1px solid var(--line);margin-bottom:16px;width:100%;
+  }
+  .sec-head .n{
+    font-family:"IBM Plex Mono",monospace;font-size:10px;color:var(--cold-deep);
+    letter-spacing:.1em;
+  }
+  .sec-head h3{
+    font-family:"IBM Plex Sans Condensed",sans-serif;
+    font-size:15px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin:0;
+  }
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:14px}
+
+  .f{display:flex;flex-direction:column;gap:5px;min-width:0}
+  .f label{font-size:12px;color:var(--steel);display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+  .f label code{font-family:"IBM Plex Mono",monospace;font-size:10px;color:var(--steel-2)}
+  .f input,.f select{
+    font-family:"IBM Plex Mono",monospace;font-size:14px;
+    padding:9px 10px;border:1px solid var(--line);border-radius:var(--radius);
+    background:#fff;color:var(--ink);width:100%;
+  }
+  .f input:focus,.f select:focus{outline:2px solid var(--cold);outline-offset:1px;border-color:transparent}
+  .f input:invalid{border-color:var(--blood)}
+  .f .unit{color:var(--steel-2)}
+
+  .actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:4px}
+  button{
+    font-family:"IBM Plex Sans Condensed",sans-serif;font-size:14px;font-weight:700;
+    letter-spacing:.09em;text-transform:uppercase;
+    border:0;border-radius:var(--radius);padding:13px 22px;cursor:pointer;
+  }
+  .btn-run{background:var(--ink);color:var(--ice-2);flex:1;min-width:180px}
+  .btn-run:hover{background:var(--cold-deep)}
+  .btn-run:disabled{opacity:.5;cursor:progress}
+  .btn-ghost{background:transparent;color:var(--steel);border:1px solid var(--line)}
+  .btn-ghost:hover{color:var(--ink);border-color:var(--steel)}
+  button:focus-visible,.status:focus-visible{outline:2px solid var(--cold);outline-offset:2px}
+
+  /* ---------- verdict ---------- */
+  .verdict{
+    background:#fff;border:1px solid var(--line);border-top:3px solid var(--steel);
+    padding:22px;border-radius:var(--radius);
+  }
+  .verdict[data-v="Safe"]{border-top-color:var(--safe)}
+  .verdict[data-v="Unsafe"]{border-top-color:var(--blood)}
+  .verdict[data-v="error"]{border-top-color:var(--amber)}
+  .verdict .big{
+    font-family:"IBM Plex Sans Condensed",sans-serif;
+    font-size:clamp(34px,9vw,46px);font-weight:700;line-height:1;margin:10px 0 2px;
+    letter-spacing:-.01em;
+  }
+  .verdict[data-v="Safe"] .big{color:var(--safe)}
+  .verdict[data-v="Unsafe"] .big{color:var(--blood)}
+  .verdict .note{font-size:13px;color:var(--steel);margin:10px 0 0}
+
+  .prob{margin-top:18px;display:flex;flex-direction:column;gap:10px}
+  .prob-row .prob-top{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px}
+  .prob-row .prob-top b{font-family:"IBM Plex Mono",monospace;font-weight:500}
+  .bar{height:6px;background:var(--ice);overflow:hidden}
+  .bar i{display:block;height:100%;transition:width .4s ease}
+  .bar.safe i{background:var(--safe)}
+  .bar.unsafe i{background:var(--blood)}
+
+  .flags{margin-top:18px;padding-top:16px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
+  .flag{display:flex;gap:9px;font-size:12.5px;line-height:1.45;align-items:flex-start}
+  .flag i{width:3px;flex:none;align-self:stretch;background:var(--amber);border-radius:2px}
+  .flag.hot i{background:var(--blood)}
+
+  /* ---------- log ---------- */
+  .log{margin-top:26px}
+  .log-list{display:flex;flex-direction:column;border-top:1px solid var(--line)}
+  .log-row{
+    display:flex;align-items:center;gap:12px;padding:10px 2px;
+    border-bottom:1px solid var(--line);font-size:13px;
+  }
+  .log-row .tag{
+    font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.08em;
+    padding:2px 7px;border:1px solid currentColor;text-transform:uppercase;flex:none;
+  }
+  .log-row .tag.Safe{color:var(--safe)}
+  .log-row .tag.Unsafe{color:var(--blood)}
+  .log-row .t{color:var(--steel-2);font-family:"IBM Plex Mono",monospace;font-size:11px;margin-left:auto;flex:none}
+  .empty{color:var(--steel);font-size:13px;padding:16px 0}
+
+  footer{margin-top:40px;padding-top:18px;border-top:1px solid var(--line);color:var(--steel);font-size:12px}
+
+  @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-inner">
+    <div class="brand">
+      <h1>COLD CHAIN</h1>
+      <span class="sub">Blood bag safety</span>
+    </div>
+    <button class="status" id="status" data-s="idle" aria-live="polite">
+      <span class="dot"></span><span id="statusText">Checking API…</span>
+    </button>
+  </div>
+  <div class="endpoint" id="endpointBar">
+    <div class="endpoint-inner">
+      <label for="apiUrl">API base URL</label>
+      <input id="apiUrl" type="url" spellcheck="false" value="http://127.0.0.1:8000" />
+      <button class="btn-ghost" id="retest" type="button">Test</button>
+      <p class="hint">Points at your FastAPI service. Requires CORSMiddleware enabled on the backend.</p>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- SIGNATURE: the 2–6 °C storage band -->
+  <section class="gauge-card">
+    <div class="gauge-head">
+      <div>
+        <span class="eyebrow">Storage window · 2–6 °C</span>
+        <h2>Where this shipment sat</h2>
+        <p>Red cells hold between 2 and 6 °C. The bar is this consignment's recorded range; the hatched zone is where it should have stayed.</p>
+      </div>
+    </div>
+    <div class="scale" id="scale">
+      <div class="track"></div>
+      <div class="band" id="band"></div>
+      <div class="band-label" id="bandLabel">Safe band</div>
+      <div class="excursion" id="exc8"></div>
+      <div class="span-bar" id="spanBar"></div>
+      <div class="marker" id="mMin"><span></span></div>
+      <div class="marker mean" id="mMean"><span></span></div>
+      <div class="marker" id="mMax"><span></span></div>
+      <div class="ticks" id="ticks"></div>
+    </div>
+  </section>
+
+  <div class="cols">
+    <!-- ============ FORM ============ -->
+    <div>
+      <form id="form" novalidate>
+
+        <fieldset>
+          <legend><div class="sec-head"><span class="n">A</span><h3>Consignment</h3></div></legend>
+          <div class="grid">
+            <div class="f">
+              <label for="route">Destination <code>route</code></label>
+              <select id="route" name="route" required>
+                <option>Hospital_1</option><option>Hospital_2</option>
+                <option>Hospital_3</option><option>Hospital_4</option>
+              </select>
+            </div>
+            <div class="f">
+              <label for="blood_type">Blood type <code>blood_type</code></label>
+              <select id="blood_type" name="blood_type" required>
+                <option>A+</option><option>A-</option>
+                <option>AB+</option><option>AB-</option>
+                <option>B+</option><option>B-</option>
+                <option selected>O+</option><option>O-</option>
+              </select>
+            </div>
+            <div class="f">
+              <label for="product_type">Product <code>RBC only</code></label>
+              <select id="product_type" name="product_type" required>
+                <option>RBC</option>
+              </select>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend><div class="sec-head"><span class="n">B</span><h3>Temperature</h3></div></legend>
+          <div class="grid">
+            <div class="f"><label for="temp_mean">Mean <span class="unit">°C</span></label><input type="number" step="0.01" id="temp_mean" name="temp_mean" value="4.2" required></div>
+            <div class="f"><label for="temp_min">Minimum <span class="unit">°C</span></label><input type="number" step="0.01" id="temp_min" name="temp_min" value="2.8" required></div>
+            <div class="f"><label for="temp_max">Maximum <span class="unit">°C</span></label><input type="number" step="0.01" id="temp_max" name="temp_max" value="6.4" required></div>
+            <div class="f"><label for="temp_std">Std dev <span class="unit">°C</span></label><input type="number" step="0.01" min="0" id="temp_std" name="temp_std" value="0.85" required></div>
+            <div class="f"><label for="frac_temp_above_6">Time above 6 °C <span class="unit">0–1</span></label><input type="number" step="0.001" min="0" max="1" id="frac_temp_above_6" name="frac_temp_above_6" value="0.08" required></div>
+            <div class="f"><label for="frac_temp_above_8">Time above 8 °C <span class="unit">0–1</span></label><input type="number" step="0.001" min="0" max="1" id="frac_temp_above_8" name="frac_temp_above_8" value="0.0" required></div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend><div class="sec-head"><span class="n">C</span><h3>Enclosure</h3></div></legend>
+          <div class="grid">
+            <div class="f"><label for="hum_mean">Humidity mean <span class="unit">%</span></label><input type="number" step="0.1" id="hum_mean" name="hum_mean" value="52.4" required></div>
+            <div class="f"><label for="hum_std">Humidity std <span class="unit">%</span></label><input type="number" step="0.1" min="0" id="hum_std" name="hum_std" value="4.1" required></div>
+            <div class="f"><label for="door_count">Door openings</label><input type="number" step="1" min="0" id="door_count" name="door_count" value="3" required></div>
+            <div class="f"><label for="light_mean_abs">Light exposure <span class="unit">lux</span></label><input type="number" step="0.01" min="0" id="light_mean_abs" name="light_mean_abs" value="12.5" required></div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend><div class="sec-head"><span class="n">D</span><h3>Handling</h3></div></legend>
+          <div class="grid">
+            <div class="f"><label for="accel_rms">Vibration RMS <span class="unit">g</span></label><input type="number" step="0.001" min="0" id="accel_rms" name="accel_rms" value="0.42" required></div>
+            <div class="f"><label for="handling_stress">Handling stress</label><input type="number" step="0.01" min="0" id="handling_stress" name="handling_stress" value="1.35" required></div>
+          </div>
+        </fieldset>
+
+        <div class="actions">
+          <button type="submit" class="btn-run" id="runBtn">Run safety check</button>
+          <button type="button" class="btn-ghost" id="excursionBtn">Load excursion case</button>
+          <button type="button" class="btn-ghost" id="resetBtn">Reset</button>
+        </div>
+      </form>
+
+      <section class="log">
+        <div class="sec-head"><span class="n">↳</span><h3>This session</h3></div>
+        <div class="log-list" id="log"><p class="empty">Checks you run will be listed here.</p></div>
+      </section>
+    </div>
+
+    <!-- ============ VERDICT ============ -->
+    <div class="verdict-col">
+      <div class="verdict" id="verdict" data-v="idle">
+        <span class="eyebrow">Model verdict</span>
+        <div class="big" id="verdictBig">—</div>
+        <p class="note" id="verdictNote">Fill in the telemetry and run a check.</p>
+        <div class="prob" id="probWrap" hidden>
+          <div class="prob-row">
+            <div class="prob-top"><span>Safe</span><b id="pSafeTxt">—</b></div>
+            <div class="bar safe"><i id="pSafeBar" style="width:0%"></i></div>
+          </div>
+          <div class="prob-row">
+            <div class="prob-top"><span>Unsafe</span><b id="pUnsafeTxt">—</b></div>
+            <div class="bar unsafe"><i id="pUnsafeBar" style="width:0%"></i></div>
+          </div>
+        </div>
+        <div class="flags" id="flags" hidden></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Random Forest classifier · model_version 1.0.0 · decision support only, not a release authority.
+  </footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  const NUM = ["temp_mean","temp_min","temp_max","temp_std","frac_temp_above_6","frac_temp_above_8",
+               "hum_mean","hum_std","light_mean_abs","accel_rms","handling_stress"];
+  const INT = ["door_count"];
+  const CAT = ["route","blood_type","product_type"];
+  const DEFAULTS = {};
+
+  const $ = id => document.getElementById(id);
+  const form = $("form");
+
+  CAT.concat(NUM, INT).forEach(k => { DEFAULTS[k] = $(k).value; });
+
+  /* ---------- gauge ---------- */
+  const LO = -2, HI = 14;                       // scale bounds in °C
+  const pct = c => Math.min(100, Math.max(0, (c - LO) / (HI - LO) * 100));
+
+  (function buildTicks(){
+    const t = $("ticks");
+    for(let c = LO; c <= HI; c += 2){
+      const d = document.createElement("div");
+      d.className = "tick";
+      d.style.left = pct(c) + "%";
+      d.innerHTML = '<i></i><b>' + c + '</b>';
+      t.appendChild(d);
+    }
+    $("band").style.left = pct(2) + "%";
+    $("band").style.width = (pct(6) - pct(2)) + "%";
+    $("bandLabel").style.left = pct(2) + "%";
+    $("exc8").style.left = pct(8) + "%";
+    $("exc8").style.width = (100 - pct(8)) + "%";
+  })();
+
+  function drawGauge(){
+    const mn = parseFloat($("temp_min").value);
+    const mx = parseFloat($("temp_max").value);
+    const mu = parseFloat($("temp_mean").value);
+    const set = (el, c, label) => {
+      const node = $(el);
+      if(!isFinite(c)){ node.style.display = "none"; return; }
+      node.style.display = "block";
+      node.style.left = pct(c) + "%";
+      node.querySelector("span").textContent = label ? c.toFixed(1) : "";
+    };
+    set("mMin", mn, false); set("mMax", mx, false); set("mMean", mu, true);
+    const bar = $("spanBar");
+    if(isFinite(mn) && isFinite(mx) && mx >= mn){
+      bar.style.display = "block";
+      bar.style.left = pct(mn) + "%";
+      bar.style.width = Math.max(0.6, pct(mx) - pct(mn)) + "%";
+    } else { bar.style.display = "none"; }
+  }
+
+  ["temp_min","temp_max","temp_mean"].forEach(id => $(id).addEventListener("input", drawGauge));
+  drawGauge();
+
+  /* ---------- api status ---------- */
+  const statusEl = $("status"), statusTxt = $("statusText");
+  const apiBase = () => $("apiUrl").value.trim().replace(/\/+$/,"");
+
+  function setStatus(s, txt){ statusEl.dataset.s = s; statusTxt.textContent = txt; }
+
+  async function ping(){
+    setStatus("busy","Checking API…");
+    try{
+      const r = await fetch(apiBase() + "/", {method:"GET"});
+      if(!r.ok) throw new Error("HTTP " + r.status);
+      const j = await r.json();
+      setStatus("ok","API online · v" + (j.model_version || "?"));
+    }catch(e){
+      setStatus("down","API unreachable");
+    }
+  }
+
+  statusEl.addEventListener("click", () => $("endpointBar").classList.toggle("open"));
+  $("retest").addEventListener("click", ping);
+  ping();
+
+  /* ---------- payload ---------- */
+  function payload(){
+    const p = {};
+    CAT.forEach(k => p[k] = $(k).value.trim());
+    NUM.forEach(k => p[k] = parseFloat($(k).value));
+    INT.forEach(k => p[k] = parseInt($(k).value, 10));
+    return p;
+  }
+
+  function validate(p){
+    const bad = Object.keys(p).filter(k => (typeof p[k] === "number" && !isFinite(p[k])) || p[k] === "");
+    if(bad.length) return "Missing or non-numeric: " + bad.join(", ");
+    if(p.temp_min > p.temp_max) return "Minimum temperature is above the maximum.";
+    if(p.temp_mean < p.temp_min || p.temp_mean > p.temp_max) return "Mean temperature sits outside the min–max range.";
+    if(p.frac_temp_above_8 > p.frac_temp_above_6) return "Time above 8 °C cannot exceed time above 6 °C.";
+    return null;
+  }
+
+  /* ---------- context flags (rule-based, shown alongside the model) ---------- */
+  function flags(p){
+    const out = [];
+    if(p.temp_max > 10) out.push(["hot","Peak of " + p.temp_max + " °C is far outside the storage window."]);
+    else if(p.temp_max > 6) out.push(["","Peak of " + p.temp_max + " °C breached the 6 °C ceiling."]);
+    if(p.temp_min < 1) out.push(["hot","Minimum of " + p.temp_min + " °C risks haemolysis from freezing."]);
+    if(p.frac_temp_above_8 > 0.02) out.push(["hot",(p.frac_temp_above_8*100).toFixed(1) + "% of the journey was above 8 °C."]);
+    else if(p.frac_temp_above_6 > 0.10) out.push(["",(p.frac_temp_above_6*100).toFixed(1) + "% of the journey was above 6 °C."]);
+    if(p.door_count > 8) out.push(["",p.door_count + " door openings — repeated warm-air ingress."]);
+    if(p.accel_rms > 1.2) out.push(["","High vibration (" + p.accel_rms + " g) during transit."]);
+    return out;
+  }
+
+  /* ---------- render ---------- */
+  const v = $("verdict"), vBig = $("verdictBig"), vNote = $("verdictNote");
+
+  function showResult(res, p){
+    v.dataset.v = res.prediction;
+    vBig.textContent = res.prediction === "Safe" ? "SAFE" : "UNSAFE";
+    vNote.textContent = res.prediction === "Safe"
+      ? "Telemetry is consistent with an intact cold chain. Confirm against physical inspection before release."
+      : "Telemetry indicates the cold chain was compromised. Quarantine and escalate to the transfusion lead.";
+
+    const ps = res.probability_safe, pu = res.probability_unsafe;
+    $("probWrap").hidden = false;
+    $("pSafeTxt").textContent = (ps*100).toFixed(1) + "%";
+    $("pUnsafeTxt").textContent = (pu*100).toFixed(1) + "%";
+    $("pSafeBar").style.width = (ps*100) + "%";
+    $("pUnsafeBar").style.width = (pu*100) + "%";
+
+    const f = flags(p), box = $("flags");
+    box.innerHTML = "";
+    if(f.length){
+      box.hidden = false;
+      f.forEach(([cls, txt]) => {
+        const d = document.createElement("div");
+        d.className = "flag " + cls;
+        d.innerHTML = '<i></i><span></span>';
+        d.querySelector("span").textContent = txt;
+        box.appendChild(d);
+      });
+    } else { box.hidden = true; }
+
+    addLog(res.prediction, Math.max(ps,pu), p);
+  }
+
+  function showError(msg, detail){
+    v.dataset.v = "error";
+    vBig.textContent = "NO RESULT";
+    vNote.textContent = msg + (detail ? " (" + detail + ")" : "");
+    $("probWrap").hidden = true;
+    $("flags").hidden = true;
+  }
+
+  const logEl = $("log");
+  let logCount = 0;
+  function addLog(pred, conf, p){
+    if(!logCount) logEl.innerHTML = "";
+    logCount++;
+    const row = document.createElement("div");
+    row.className = "log-row";
+    const time = new Date().toLocaleTimeString([], {hour:"2-digit", minute:"2-digit", second:"2-digit"});
+    row.innerHTML = '<span class="tag ' + pred + '">' + pred + '</span>'
+      + '<span class="mono">' + p.blood_type + ' · ' + p.product_type + '</span>'
+      + '<span class="mono" style="color:var(--steel)">' + p.temp_max.toFixed(1) + '°C peak · ' + (conf*100).toFixed(0) + '%</span>'
+      + '<span class="t">' + time + '</span>';
+    logEl.prepend(row);
+  }
+
+  /* ---------- submit ---------- */
+  form.addEventListener("submit", async e => {
+    e.preventDefault();
+    const p = payload();
+    const err = validate(p);
+    if(err){ showError(err); return; }
+
+    const btn = $("runBtn");
+    btn.disabled = true; btn.textContent = "Checking…";
+    try{
+      const r = await fetch(apiBase() + "/predict", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify(p)
+      });
+      if(r.status === 422){
+        const j = await r.json().catch(()=>null);
+        throw new Error("The API rejected the payload — check field names and types" + (j && j.detail && j.detail[0] ? ": " + (j.detail[0].loc||[]).join(".") : ""));
+      }
+      if(r.status === 500){
+        throw new Error("Server error — an unseen category value for route, blood type or product will make the label encoder fail");
+      }
+      if(!r.ok) throw new Error("HTTP " + r.status);
+      const res = await r.json();
+      showResult(res, p);
+      setStatus("ok","API online · v" + (res.model_version || "?"));
+    }catch(ex){
+      if(ex instanceof TypeError){
+        showError("Could not reach the API. Confirm it is running and that CORS is enabled.", apiBase());
+        setStatus("down","API unreachable");
+        $("endpointBar").classList.add("open");
+      } else {
+        showError(ex.message);
+      }
+    }finally{
+      btn.disabled = false; btn.textContent = "Run safety check";
+    }
+  });
+
+  /* ---------- sample data ---------- */
+  $("excursionBtn").addEventListener("click", () => {
+    const s = {temp_mean:7.9, temp_min:3.1, temp_max:13.6, temp_std:2.94,
+               frac_temp_above_6:0.61, frac_temp_above_8:0.34,
+               hum_mean:63.2, hum_std:9.8, door_count:14,
+               light_mean_abs:88.4, accel_rms:1.87, handling_stress:4.62,
+               route:"Hospital_3", blood_type:"AB-", product_type:"RBC"};
+    Object.keys(s).forEach(k => { if($(k)) $(k).value = s[k]; });
+    drawGauge();
+  });
+
+  $("resetBtn").addEventListener("click", () => {
+    Object.keys(DEFAULTS).forEach(k => $(k).value = DEFAULTS[k]);
+    drawGauge();
+    v.dataset.v = "idle"; vBig.textContent = "—";
+    vNote.textContent = "Fill in the telemetry and run a check.";
+    $("probWrap").hidden = true; $("flags").hidden = true;
+  });
+
+})();
+</script>
+</body>
+</html>
