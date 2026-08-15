@@ -270,7 +270,6 @@ http://127.0.0.1:8000/docs
 
 Swagger UI can be used to submit telemetry data and receive predictions in real time.
 
-(Add screenshots here.)
 
 ---
 
